@@ -143,3 +143,112 @@ resource "aws_route_table_association" "priv-sub-2-rt-ass" {
   route_table_id = aws_route_table.priv-rt.id
 }
 
+
+
+#Security groups 
+
+#Bation Host security group
+resource "aws_security_group" "bastion-sg" {
+  name        = "bastion-sg"
+  description = "Allow SSH inbound traffic from MY IP and all outbound traffic"
+  vpc_id      = aws_vpc.app-vpc.id
+
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["99.127.213.4/32"]
+  }
+  
+   egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "bastion-sg"
+  }
+}
+
+#Ansible Master security group
+resource "aws_security_group" "ansible-sg" {
+  name        = "ansible-sg"
+  description = "Allow SSH inbound traffic from Bastion Host and all outbound traffic"
+  vpc_id      = aws_vpc.app-vpc.id
+
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.5/32"]
+  }
+  
+   egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "ansible-sg"
+  }
+}
+
+
+#Build server security group
+resource "aws_security_group" "build-sg" {
+  name        = "build-sg"
+  description = "Allow SSH inbound traffic from Bastion Host and all outbound traffic"
+  vpc_id      = aws_vpc.app-vpc.id
+
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.5/32"]
+  }
+  
+   egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "build-sg"
+  }
+}
+#App server security group
+resource "aws_security_group" "app-sg" {
+  name        = "app-sg"
+  description = "Allow SSH inbound traffic from Bastion Host and all outbound traffic"
+  vpc_id      = aws_vpc.app-vpc.id
+
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.5/32"]
+  }
+  
+   egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "app-sg"
+  }
+}
+
+
