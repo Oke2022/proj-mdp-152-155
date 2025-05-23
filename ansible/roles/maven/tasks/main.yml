@@ -1,2 +1,11 @@
 ---
 # tasks file for roles/maven
+
+
+    - name: Install Maven
+      apt:
+        name: maven
+        state: present
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+...

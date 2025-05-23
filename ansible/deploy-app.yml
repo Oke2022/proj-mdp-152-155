@@ -1,0 +1,36 @@
+---
+- name: Deploy WAR file from Build Server to App Server
+  hosts: buildServer
+  become: yes
+  tasks:
+    - name: Ensure WAR file is present
+      stat:
+        path: /home/ubuntu/proj-mdp-152-155/target/WebAppCal-1.3.5.war
+      register: war_file
+
+    - name: Fail if WAR file is not found
+      fail:
+        msg: "WAR file not found!"
+      when: not war_file.stat.exists
+
+    - name: Copy WAR file to control node
+      fetch:
+        src: /home/ubuntu/proj-mdp-152-155/target/WebAppCal-1.3.5.war
+        dest: /tmp/
+        flat: yes
+
+- name: Transfer WAR file to App Server
+  hosts: appServer
+  become: yes
+  tasks:
+    - name: Copy WAR file to Tomcat webapps
+      copy:
+        src: /tmp/WebAppCal-1.3.5.war
+        dest: /home/ubuntu/apache-tomcat-7.0.94/webapps/
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+
+    - name: Restart Tomcat
+      shell: /home/ubuntu/apache-tomcat-7.0.94/bin/shutdown.sh; sleep 5; /home/ubuntu/apache-tomcat-7.0.94/bin/startup.sh
+...

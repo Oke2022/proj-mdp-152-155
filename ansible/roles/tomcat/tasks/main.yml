@@ -1,25 +1,30 @@
 ---
-# tasks file for roles/tomcat
+# tasks file for roles/java_tomcat
 
+- name: Install wget
+  apt:
+    name: wget
+    state: present
 
+- name: Download Apache Tomcat 7
+  get_url:
+    url: https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.94/bin/apache-tomcat-7.0.94.tar.gz
+    dest: /home/ubuntu/apache-tomcat-7.0.94.tar.gz
+    mode: '0644'
 
-    - name: Install Apache2
-      apt:
-        name: apache2
-        state: present
-      when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+- name: Extract Apache Tomcat
+  unarchive:
+    src: /home/ubuntu/apache-tomcat-7.0.94.tar.gz
+    dest: /home/ubuntu/
+    remote_src: yes
 
+- name: Make Tomcat startup script executable
+  file:
+    path: /home/ubuntu/apache-tomcat-7.0.94/bin/startup.sh
+    mode: '0755'
 
-    - name: Start the service
-      service:
-        name: apache2
-        state: started
-      when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
-
-    - name: Start the service
-      service:
-        name: apache2
-        enabled: yes
-      when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
-
+- name: Start Tomcat
+  shell: ./startup.sh
+  args:
+    chdir: /home/ubuntu/apache-tomcat-7.0.94/bin/
 ...

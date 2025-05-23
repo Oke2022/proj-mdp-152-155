@@ -1,0 +1,68 @@
+---
+- hosts: jenkinsHost
+  remote_user: ubuntu
+  become: yes
+  tasks:
+    - name: Run installation script directly
+      shell: |
+        #!/bin/bash
+        set -e
+        
+        # Clean up first
+        rm -rf /etc/apt/sources.list.d/docker* /etc/apt/sources.list.d/jenkins* /etc/apt/keyrings/docker* /etc/apt/keyrings/jenkins* /usr/share/keyrings/docker* 2>/dev/null || true
+        apt-get clean && apt-get update
+        
+        # Install Java 21
+        apt update
+        apt install -y fontconfig openjdk-21-jre
+        java -version
+        
+        # Remove any conflicting packages
+        for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do 
+          apt-get remove -y $pkg 2>/dev/null || true
+        done
+        
+        # Install Docker
+        apt-get update
+        apt-get install -y ca-certificates curl
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        apt-get update
+        apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        
+        # Test Docker
+        docker run hello-world
+        
+        # Install Jenkins
+        wget -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+        apt-get update
+        apt-get install -y jenkins
+        
+        # Start and enable Jenkins
+        systemctl enable jenkins
+        systemctl start jenkins
+        
+        echo "Installation completed successfully!"
+      register: install_result
+      
+    - name: Show installation result
+      debug:
+        var: install_result.stdout_lines
+
+    - name: Get Jenkins initial admin password
+      shell: cat /var/lib/jenkins/secrets/initialAdminPassword 2>/dev/null || echo "Password file not found yet"
+      register: jenkins_password
+
+    - name: Display Jenkins initial admin password
+      debug:
+        msg:
+          - "==================== INSTALLATION COMPLETE ===================="
+          - "Jenkins is now running on port 8080"
+          - "Jenkins initial admin password: {{ jenkins_password.stdout }}"
+          - "Access Jenkins at: http://{{ ansible_default_ipv4.address }}:8080"
+          - "Docker is also installed and running"
+          - "=============================================================="
+...

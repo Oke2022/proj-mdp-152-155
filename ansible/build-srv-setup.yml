@@ -1,0 +1,11 @@
+---
+- name: Install Java 11, Maven, Git, Then clone and Build Java application on Build Server
+  hosts: buildServer
+  become: yes
+
+  roles:
+    - java
+    - maven
+    - git
+    - clone_build
+...

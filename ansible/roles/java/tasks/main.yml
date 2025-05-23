@@ -1,2 +1,11 @@
 ---
 # tasks file for roles/java
+
+
+    - name: Install Java 11
+      apt:
+        name: openjdk-11-jdk
+        state: present
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
+...

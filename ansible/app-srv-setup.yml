@@ -1,0 +1,10 @@
+
+---
+- name: Install Java and Tomcat on App server
+  hosts: appServer
+  become: yes
+
+  roles:
+    - java
+    - tomcat
+...
