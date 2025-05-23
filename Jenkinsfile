@@ -8,7 +8,7 @@ pipeline {
         stage('Clone Repo') {
             steps { 
               git credentialsId: 'github-access',
-                git branch: 'project-1', url: 'https://github.com/Oke2022/proj-mdp-152-155.git'
+		url: 'https://github.com/Oke2022/proj-mdp-152-155.git', branch: 'project-1'
             }
         }
         stage('Build Docker Image') {
