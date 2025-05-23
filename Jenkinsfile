@@ -1,13 +1,13 @@
 pipeline {
     agent any
-   
-    stages {
-        stage('Clone Repo') {
-            steps { 
-              git credentialsId: 'github-access',
-		url: 'https://github.com/Oke2022/proj-mdp-152-155.git', branch: 'project-1'
+    
+     stages {
+        stage('Checkout') {
+            steps {
+                  checkout scm
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
