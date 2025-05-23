@@ -10,18 +10,16 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build('calculator-app')
-                }
+              sh 'docker build -t calculator-app .'
             }
         }
+
         stage('Run Container') {
             steps {
-                script {
-                    docker.image('calculator-app').run('-p 8080:8080')
-                }
+              sh 'docker run -d -p 8080:8080 calculator-app'
             }
         }
-    }
-}
+
+      }
+ }
 
