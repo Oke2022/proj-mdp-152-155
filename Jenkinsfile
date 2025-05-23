@@ -6,7 +6,8 @@ pipeline {
     }
     stages {
         stage('Clone Repo') {
-            steps {
+            steps { 
+              git credentialsId: 'github-access',
                 git branch: 'project-1', url: 'https://github.com/Oke2022/proj-mdp-152-155.git'
             }
         }
