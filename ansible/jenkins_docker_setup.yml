@@ -16,7 +16,11 @@
         apt update
         apt install -y fontconfig openjdk-21-jre
         java -version
-        
+       
+        # Install Git
+
+        apt install -y git
+
         # Remove any conflicting packages
         for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do 
           apt-get remove -y $pkg 2>/dev/null || true
@@ -45,6 +49,11 @@
         systemctl enable jenkins
         systemctl start jenkins
         
+        # A jenkins to docker group to be able to  run docker command
+        sudo usermod -aG docker jenkins
+        sudo systemctl restart docker
+        sudo systemctl restart jenkins
+
         echo "Installation completed successfully!"
       register: install_result
       
