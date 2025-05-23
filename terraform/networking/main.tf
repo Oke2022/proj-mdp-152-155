@@ -214,6 +214,14 @@ resource "aws_security_group" "build-sg" {
     cidr_blocks      = ["10.0.0.5/32"]
   }
   
+
+    ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.140/32"]
+  }
+
    egress {
     from_port        = 0
     to_port          = 0
@@ -238,6 +246,22 @@ resource "aws_security_group" "app-sg" {
     protocol         = "tcp"
     cidr_blocks      = ["10.0.0.5/32"]
   }
+
+   ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.140/32"]
+  }
+
+   ingress {
+    from_port        = 8080
+    to_port          = 8080
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+
   
    egress {
     from_port        = 0
@@ -250,5 +274,55 @@ resource "aws_security_group" "app-sg" {
     Name = "app-sg"
   }
 }
+
+
+
+#JenkinsAndDocker server security group
+resource "aws_security_group" "jenkinsAndDorker-sg" {
+  name        = "jenkinsAndDocker-sg"
+  description = "Allow SSH inbound traffic from Bastion Host and ansible, allow port 50000 for docker, and port 8080 for jenkins and all outbound traffic"
+  vpc_id      = aws_vpc.app-vpc.id
+
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.5/32"]
+  }
+
+   ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.140/32"]
+  }
+
+   ingress {
+    from_port        = 50000
+    to_port          = 50000
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+   ingress {
+    from_port        = 8080
+    to_port          = 8080
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+   egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "jenkinsAndDocker-sg"
+  }
+}
+
 
 

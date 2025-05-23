@@ -5,9 +5,9 @@ module "Bastion" {
 
   ami                    = "ami-04f167a56786e4b09"
   instance_type          = "t2.micro"
-  subnet_id              = "subnet-0423294c92c4f4a15"
+  subnet_id              = "subnet-0cb3f547d61223235"
   key_name               = "my-key1"
-  vpc_security_group_ids = ["sg-09bcd3726608527f1"]
+  vpc_security_group_ids = ["sg-0eb70371f736a9c9d"]
   private_ip             = "10.0.0.5"
   monitoring             = true
 
@@ -25,9 +25,9 @@ module "ans-master" {
 
   ami                    = "ami-04f167a56786e4b09"
   instance_type          = "t2.micro"
-  subnet_id              = "subnet-08af16aaaf6ef0df7"
+  subnet_id              = "subnet-01b57504318845331"
   key_name               = "my-key1"
-  vpc_security_group_ids = ["sg-0a09749fa8a4925a5"]
+  vpc_security_group_ids = ["sg-05619a19aef3824ab"]
   private_ip             = "10.0.0.140"
   monitoring             = true
   user_data = file("${path.module}/setup-ansible.sh")
@@ -47,9 +47,9 @@ module "build-server" {
 
   ami                    = "ami-04f167a56786e4b09"
   instance_type          = "t2.micro"
-  subnet_id              = "subnet-08af16aaaf6ef0df7"
+  subnet_id              = "subnet-01b57504318845331"
   key_name               = "my-key1"
-  vpc_security_group_ids = ["sg-06ecd30088d2bf940"]
+  vpc_security_group_ids = ["sg-0330a1ec75bf2147c"]
   private_ip             = "10.0.0.135"
   monitoring             = true
 
@@ -66,10 +66,10 @@ module "app-server" {
   name = "App-server"
   ami                    = "ami-04f167a56786e4b09"
   instance_type          = "t2.micro"
-  subnet_id              = "subnet-08af16aaaf6ef0df7"
+  subnet_id              = "subnet-0cb3f547d61223235"
   key_name               = "my-key1"
-  vpc_security_group_ids = ["sg-0dfd7d6ad44ccf555"]
-  private_ip             = "10.0.0.150"
+  vpc_security_group_ids = ["sg-0ddc2e95d99d86a25"]
+  private_ip             = "10.0.0.10"
   monitoring             = true
 
   tags = {
@@ -77,4 +77,25 @@ module "app-server" {
     Environment = "dev"
   }
 }
+
+
+module "JenkinsAndDocker-server" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+
+  name = "JenkinsAndDocker-server"
+
+  ami                    = "ami-04f167a56786e4b09"
+  instance_type          = "t2.micro"
+  subnet_id              = "subnet-0cb3f547d61223235"
+  key_name               = "my-key1"
+  vpc_security_group_ids = ["sg-0c2c3b8309c6a6967"]
+  private_ip             = "10.0.0.15"
+  monitoring             = true
+
+  tags = {
+    Terraform   = "true"
+    Environment = "dev"
+  }
+}
+
 
