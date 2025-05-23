@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    
+    environment {
+        GIT_SSH_COMMAND = 'ssh -o StrictHostKeyChecking=no'
+    }
     stages {
         stage('Clone Repo') {
             steps {
