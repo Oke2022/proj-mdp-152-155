@@ -1,25 +1,49 @@
-pipeline {
+pipeline { 
     agent any
-    
-     stages {
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') 
+        DOCKER_IMAGE = 'calculator-app'
+        DOCKER_TAG = 'latest'
+        DOCKERHUB_REPO = 'okejoshua/calculator-app'
+    }
+
+    stages {
         stage('Checkout') {
             steps {
-                  checkout scm
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-              sh 'docker build -t calculator-app .'
+                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
+            }
+        }
+
+        stage('Tag Image for Docker Hub') {
+            steps {
+                sh 'docker tag $DOCKER_IMAGE:$DOCKER_TAG $DOCKERHUB_REPO:$DOCKER_TAG'
+            }
+        }
+
+        stage('Docker Hub Login') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                sh 'docker push $DOCKERHUB_REPO:$DOCKER_TAG'
             }
         }
 
         stage('Run Container') {
             steps {
-              sh 'docker run -d -p 9090:8080 calculator-app'
+                sh 'docker run -d -p 9090:8080 $DOCKER_IMAGE:$DOCKER_TAG'
             }
         }
-
-      }
- }
+    }
+}
 
