@@ -1,0 +1,39 @@
+---
+- name: Create Kubernetes Cluster with KOPS
+  hosts: ansibleMaster
+  become: true
+  vars_files:
+    - ../vars/main.yml
+
+  tasks:
+    - name: Create Kubernetes cluster with KOPS
+      shell: |
+        kops create cluster \
+          --name={{ cluster_name }} \
+          --zones={{ az1 }},{{ az2 }} \
+          --control-plane-zones={{ az1 }} \
+          --node-count=2 \
+          --node-size=t3.medium \
+          --control-plane-size=t3.medium \
+          --control-plane-count=1 \
+          --dns=private \
+          --state=s3://{{ s3_bucket }} \
+          --yes
+      environment:
+        KOPS_STATE_STORE: "s3://{{ s3_bucket }}"
+        AWS_DEFAULT_REGION: "{{ region }}"
+
+    - name: Validate cluster creation by running kops validate cluster
+      shell: kops validate cluster --name {{ cluster_name }} --state s3://{{ s3_bucket }}
+      environment:
+        KOPS_STATE_STORE: "s3://{{ s3_bucket }}"
+        AWS_DEFAULT_REGION: "{{ region }}"
+      register: validate_output
+      retries: 5
+      delay: 20
+      until: validate_output.rc == 0
+
+    - name: Show validation output
+      debug:
+        var: validate_output.stdout
+...

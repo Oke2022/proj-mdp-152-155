@@ -1,0 +1,15 @@
+---
+- name: Delete Kubernetes Cluster
+  hosts: ansibleMaster
+  become: true
+  vars_files:
+    - ../vars/main.yml
+
+  tasks:
+    - name: Delete the cluster
+      shell: |
+        export KOPS_STATE_STORE=s3://{{ s3_bucket }}
+        kops delete cluster --name {{ cluster_name }} --yes
+      environment:
+        KOPS_STATE_STORE: "s3://{{ s3_bucket }}"
+...

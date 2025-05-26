@@ -1,0 +1,7 @@
+---
+s3_bucket: "cal-kops-state-bucket"
+region: "us-east-2"
+cluster_name: "calculator.k8s.local"
+az1: "us-east-2a"
+az2: "us-east-2b"
+...
