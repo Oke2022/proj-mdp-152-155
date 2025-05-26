@@ -332,4 +332,65 @@ resource "aws_security_group" "jenkinsAndDorker-sg" {
 }
 
 
+#K8 server security groups
+resource "aws_security_group" "k8-sg" {
+  name        = "k8-sg"
+  description = "Allow SSH inbound traffic from Bastion Host and ansible, allow port 80, 443, 6443, 10250 and all outbound traffic"
+  vpc_id      = aws_vpc.app-vpc.id
+
+
+  ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.5/32"]
+  }
+
+   ingress {
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["10.0.0.140/32"]
+  }
+
+   ingress {
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+   ingress {
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+   ingress {
+    from_port        = 6443
+    to_port          = 6443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+  
+    ingress {
+    from_port        = 10250
+    to_port          = 10250
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+
+   egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
+  
+  tags = {
+    Name = "app-sg"
+  }
+}
 
