@@ -1,0 +1,16 @@
+---
+- name: Deploy Calculator App to Kubernetes
+  hosts: k8s-master
+  become: yes
+  tasks:
+
+    - name: Copy deployment.yml to Kubernetes master
+      copy:
+        src: ../../kubernetes/deployment.yml
+        dest: /tmp/deployment.yml
+
+    - name: Apply Kubernetes manifest
+      shell: kubectl apply -f /tmp/deployment.yml
+      environment:
+        KUBECONFIG: /root/.kube/config
+...

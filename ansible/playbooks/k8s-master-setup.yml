@@ -1,0 +1,78 @@
+---
+- name: Setup Kubernetes Master - install tools
+  hosts: k8s-master
+  become: yes
+  tasks:
+    - name: Ensure unzip is installed
+      apt:
+        name: unzip
+        state: present
+        update_cache: yes
+
+    - name: Remove awscli if installed
+      apt:
+        name: awscli
+        state: absent
+
+    - name: Download AWS CLI v2 zip
+      get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp/awscliv2.zip
+        mode: '0644'
+
+    - name: Unzip AWS CLI v2 installer
+      unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install AWS CLI v2
+      command: /tmp/aws/install
+      args:
+        creates: /usr/local/bin/aws  # only run if aws cli v2 not already installed
+
+    - name: Download latest kops binary
+      shell: >
+        curl -Lo /tmp/kops
+        https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+      args:
+        creates: /tmp/kops
+
+    - name: Make kops executable
+      file:
+        path: /tmp/kops
+        mode: '0755'
+
+    - name: Move kops to /usr/local/bin
+      copy:
+        src: /tmp/kops
+        dest: /usr/local/bin/kops
+        remote_src: yes
+        mode: '0755'
+
+    - name: Download latest kubectl binary
+      shell: >
+        curl -Lo /tmp/kubectl
+        "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      args:
+        creates: /tmp/kubectl
+
+    - name: Make kubectl executable
+      file:
+        path: /tmp/kubectl
+        mode: '0755'
+
+    - name: Move kubectl to /usr/local/bin
+      copy:
+        src: /tmp/kubectl
+        dest: /usr/local/bin/kubectl
+        remote_src: yes
+        mode: '0755'
+
+    - name: Ensure ssh key exists
+      openssh_keypair:
+        path: ~/.ssh/id_rsa
+        size: 2048
+        type: rsa
+        force: no
+...

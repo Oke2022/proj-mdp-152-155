@@ -1,0 +1,12 @@
+- name: Validate KOPS Cluster
+  hosts: k8s-master
+  become: yes
+  tasks:
+    - name: Validate KOPS cluster
+      shell: kops validate cluster --state=s3://k8s-cal-state-bucket
+      register: validation_output
+
+    - name: Show cluster validation result
+      debug:
+        var: validation_output.stdout
+...
