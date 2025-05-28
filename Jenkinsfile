@@ -11,6 +11,12 @@ pipeline {
     }
 
     stages {
+	stage('Clean Workspace Before Build') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -55,6 +61,11 @@ pipeline {
                     '''
                 }
             }
+        }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
 }
