@@ -1,15 +1,77 @@
+---
 - name: Create KOPS Cluster
   hosts: k8s-master
   become: yes
+  vars:
+    kops_state_store: s3://k8s-cal-state-bucket
+    cluster_name: cal.k8s.local
   tasks:
+    - name: Check if cluster already exists
+      shell: kops get clusters --state={{ kops_state_store }}
+      environment:
+        KOPS_STATE_STORE: "{{ kops_state_store }}"
+      register: existing_clusters
+      failed_when: false
+      changed_when: false
+
     - name: Create KOPS cluster
       shell: |
         kops create cluster \
-          --state=s3://k8s-cal-state-bucket \
+          --state={{ kops_state_store }} \
           --zones=us-east-2a,us-east-2b \
-          --node-count=2 \
-          --name=cal.k8s.local \
+          --node-count=4 \
+          --master-zones=us-east-2a \
+          --node-size=t3.medium \
+          --master-size=t3.medium \
+          --name={{ cluster_name }} \
           --yes
       environment:
-        KOPS_STATE_STORE: s3://k8s-cal-state-bucket
+        KOPS_STATE_STORE: "{{ kops_state_store }}"
+      when: cluster_name not in existing_clusters.stdout
+      register: cluster_creation
+
+    - name: Wait for cluster to be ready (new cluster)
+      shell: kops validate cluster --name={{ cluster_name }} --wait=10m
+      environment:
+        KOPS_STATE_STORE: "{{ kops_state_store }}"
+      when: cluster_creation is changed
+      retries: 3
+      delay: 60
+
+    - name: Validate existing cluster
+      shell: kops validate cluster --name={{ cluster_name }}
+      environment:
+        KOPS_STATE_STORE: "{{ kops_state_store }}"
+      when: cluster_name in existing_clusters.stdout
+      register: cluster_validation
+      failed_when: false
+
+    - name: Display cluster validation status
+      debug:
+        msg: "Cluster validation: {{ 'PASSED' if cluster_validation.rc == 0 else 'FAILED - ' + cluster_validation.stderr }}"
+      when: cluster_validation is defined
+
+    - name: Export kubeconfig for cluster
+      shell: kops export kubeconfig --name={{ cluster_name }} --admin
+      environment:
+        KOPS_STATE_STORE: "{{ kops_state_store }}"
+      become: no  # Run as regular user to write to ~/.kube/config
+
+    - name: Set KOPS_STATE_STORE in user profile
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        line: 'export KOPS_STATE_STORE={{ kops_state_store }}'
+        state: present
+      become: no
+
+    - name: Verify cluster connectivity
+      shell: kubectl get nodes
+      become: no
+      register: cluster_nodes
+      retries: 3
+      delay: 30
+
+    - name: Display cluster status
+      debug:
+        msg: "Cluster nodes: {{ cluster_nodes.stdout_lines }}"
 ...

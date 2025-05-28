@@ -3,14 +3,23 @@
   hosts: k8s-master
   become: yes
   tasks:
-
-    - name: Copy deployment.yml to Kubernetes master
+    - name: Copy deployment_and_service.yml to Kubernetes master
       copy:
-        src: ../../kubernetes/deployment.yml
-        dest: /tmp/deployment.yml
-
+        src: /home/ubuntu/proj-mdp-152-155/kubernetes/deployment_and_service.yml
+        dest: /tmp/deployment_and_service.yml
+        
     - name: Apply Kubernetes manifest
-      shell: kubectl apply -f /tmp/deployment.yml
+      shell: kubectl apply -f /tmp/deployment_and_service.yml
       environment:
         KUBECONFIG: /root/.kube/config
+        
+    - name: Verify deployment status
+      shell: kubectl get deployments
+      environment:
+        KUBECONFIG: /root/.kube/config
+      register: deployment_status
+      
+    - name: Display deployment status
+      debug:
+        var: deployment_status.stdout
 ...

@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calc-deployment
+  labels:
+    app: calc
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: calc
+  template:
+    metadata:
+      labels:
+        app: calc
+    spec:
+      # Distribute pods across nodes and AZs for better utilization
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - calc
+              topologyKey: kubernetes.io/hostname  # Spread across different nodes
+          - weight: 50
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - calc
+              topologyKey: topology.kubernetes.io/zone  # Prefer different AZs
+      containers:
+      - name: calc-container
+        image: okejoshua/calculator-app:latest
+        ports:
+        - containerPort: 8080
+        # Add resource limits for better scheduling
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        # Add health checks
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calc-service
+  labels:
+    app: calc
+spec:
+  type: LoadBalancer
+  selector:
+    app: calc
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+      name: http
