@@ -41,7 +41,13 @@ pipeline {
 
         stage('Run Container') {
             steps {
-                sh 'docker run -d -p 9090:8080 $DOCKER_IMAGE:$DOCKER_TAG'
+		sh '''
+		# Remove any existing container with the same name
+		docker rm -f calculator-app || true
+
+		# Run the new container version with a fixed name
+		docker run -d --name calculator-app -p 9090:8080 $DOCKER_IMAGE:$DOCKER_TAG'
+		'''
             }
         }
     }
