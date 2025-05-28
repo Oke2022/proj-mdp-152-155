@@ -23,6 +23,8 @@
           --master-zones=us-east-2a \
           --node-size=t3.medium \
           --master-size=t3.medium \
+          --vpc=vpc-05a89989b2c5b5414 \
+          --subnets=subnet-01b57504318845331,subnet-04e8ba3fa25787071 \
           --name={{ cluster_name }} \
           --yes
       environment:

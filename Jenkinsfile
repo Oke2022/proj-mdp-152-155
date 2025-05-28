@@ -47,21 +47,19 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: 'kubeconfig-secret', variable: 'KUBECONFIG')]) {
-                    sh '''
-                        echo "Using kubeconfig at $KUBECONFIG"
-
-                        # Replace image line in deployment file with the latest tag
-                        sed -i "s|image:.*|image: $DOCKERHUB_REPO:$DOCKER_TAG|" $K8S_DEPLOYMENT_PATH
-
-                        kubectl apply -f $K8S_DEPLOYMENT_PATH
-                        kubectl apply -f $K8S_SERVICE_PATH
-                    '''
-                }
+        stage('Run Ansible Playbook to Deploy to Kubernetes')
+	     steps {
+                sshagent(['ansible-ssh-key']) {
+            	    sh '''
+                	ssh -o StrictHostKeyChecking=no ubuntu@10.0.0.140 '
+			cd /home/ubuntu/proj-mdp-152-155 &&
+                	ansible-playbook -i ansible/inventory/host.ini ansible/playbooks/k8s-app-deploy.yml
+                	'
+            	    '''
+        	}	
             }
-        }
+
+	}
     }
     post {
         always {
