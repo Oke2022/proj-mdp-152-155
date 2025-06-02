@@ -1,7 +1,27 @@
-- name: Delete KOPS Cluster
+---
+- name: Quick Delete KOPS Cluster
   hosts: k8s-master
-  become: yes
+  become: no
+  vars:
+    kops_state_store: s3://k8s-cal-state-bucket
+    cluster_name: cal.k8s.local
+
   tasks:
-    - name: Delete KOPS cluster
-      shell: kops delete cluster --name=cal.k8s.local --state=s3://k8s-cal-state-bucket --yes
+    - name: Delete cluster immediately
+      shell: kops delete cluster {{ cluster_name }} --state={{ kops_state_store }} --yes
+      environment:
+        KOPS_STATE_STORE: "{{ kops_state_store }}"
+      register: deletion_result
+      failed_when: false
+
+    - name: Clean up kubeconfig
+      shell: |
+        kubectl config delete-cluster {{ cluster_name }} || true
+        kubectl config delete-context {{ cluster_name }} || true
+        kubectl config unset users.{{ cluster_name }} || true
+      failed_when: false
+
+    - name: Display result
+      debug:
+        msg: "{{ 'Cluster deleted successfully' if deletion_result.rc == 0 else 'Deletion failed: ' + deletion_result.stderr }}"
 ...
