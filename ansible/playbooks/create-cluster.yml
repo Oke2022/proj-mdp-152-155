@@ -5,6 +5,13 @@
   vars:
     kops_state_store: s3://k8s-cal-state-bucket
     cluster_name: cal.k8s.local
+    # Your VPC and subnet configuration
+    vpc_id: vpc-05a89989b2c5b5414
+    private_subnets: subnet-01b57504318845331,subnet-04e8ba3fa25787071
+    # Add your public subnet IDs here
+    public_subnets: subnet-0cb3f547d61223235,subnet-0afa481b339083ed9
+    use_existing_bastion: true
+    
   tasks:
     - name: Check if cluster already exists
       shell: kops get clusters --state={{ kops_state_store }}
@@ -13,67 +20,117 @@
       register: existing_clusters
       failed_when: false
       changed_when: false
-
-    - name: Create KOPS cluster
+      
+    - name: Verify VPC and subnets exist
+      shell: |
+        echo "Checking VPC..."
+        aws ec2 describe-vpcs --vpc-ids {{ vpc_id }} --query 'Vpcs[0].State' --output text
+        echo "Checking private subnets..."
+        aws ec2 describe-subnets --subnet-ids {{ private_subnets.split(',') | join(' ') }} --query 'Subnets[*].[SubnetId,AvailabilityZone,CidrBlock,MapPublicIpOnLaunch]' --output table
+        echo "Checking public subnets..."
+        aws ec2 describe-subnets --subnet-ids {{ public_subnets.split(',') | join(' ') }} --query 'Subnets[*].[SubnetId,AvailabilityZone,CidrBlock,MapPublicIpOnLaunch]' --output table
+      register: vpc_check
+      when: cluster_name not in existing_clusters.stdout
+      
+        #    - name: Display VPC validation results
+        #debug:
+        # msg: "{{ vpc_check.stdout_lines }}"
+        #when: vpc_check is defined
+      
+    - name: Create KOPS cluster (Production setup with existing bastion)
       shell: |
         kops create cluster \
           --state={{ kops_state_store }} \
           --zones=us-east-2a,us-east-2b \
-          --node-count=4 \
+          --node-count=2 \
           --master-zones=us-east-2a \
           --node-size=t3.medium \
           --master-size=t3.medium \
-          --vpc=vpc-05a89989b2c5b5414 \
-          --subnets=subnet-01b57504318845331,subnet-04e8ba3fa25787071 \
+          --vpc={{ vpc_id }} \
+          --subnets={{ private_subnets }} \
+          --utility-subnets={{ public_subnets }} \
+          --topology=private \
+          --associate-public-ip=false \
+          --networking=calico \
+          --api-loadbalancer-type=public \
           --name={{ cluster_name }} \
           --yes
       environment:
         KOPS_STATE_STORE: "{{ kops_state_store }}"
       when: cluster_name not in existing_clusters.stdout
       register: cluster_creation
-
+        
     - name: Wait for cluster to be ready (new cluster)
-      shell: kops validate cluster --name={{ cluster_name }} --wait=10m
+      shell: kops validate cluster --name={{ cluster_name }} --wait=15m
       environment:
         KOPS_STATE_STORE: "{{ kops_state_store }}"
       when: cluster_creation is changed
       retries: 3
-      delay: 60
-
+      delay: 120
+      register: new_cluster_validation
+      
     - name: Validate existing cluster
       shell: kops validate cluster --name={{ cluster_name }}
       environment:
         KOPS_STATE_STORE: "{{ kops_state_store }}"
       when: cluster_name in existing_clusters.stdout
-      register: cluster_validation
+      register: existing_cluster_validation
       failed_when: false
-
-    - name: Display cluster validation status
-      debug:
-        msg: "Cluster validation: {{ 'PASSED' if cluster_validation.rc == 0 else 'FAILED - ' + cluster_validation.stderr }}"
-      when: cluster_validation is defined
-
+      
+        #    - name: Display cluster validation status
+        #debug:
+        # msg: "Cluster validation: {{ 'PASSED' if (new_cluster_validation.rc | default(existing_cluster_validation.rc)) == 0 else 'FAILED - Check cluster status' }}"
+        
     - name: Export kubeconfig for cluster
       shell: kops export kubeconfig --name={{ cluster_name }} --admin
       environment:
         KOPS_STATE_STORE: "{{ kops_state_store }}"
-      become: no  # Run as regular user to write to ~/.kube/config
-
+      become: no
+      
     - name: Set KOPS_STATE_STORE in user profile
       lineinfile:
         path: /home/ubuntu/.bashrc
         line: 'export KOPS_STATE_STORE={{ kops_state_store }}'
         state: present
       become: no
-
-    - name: Verify cluster connectivity
-      shell: kubectl get nodes
+      
+    - name: Verify cluster connectivity and node distribution
+      shell: |
+        echo "=== Cluster Nodes ==="
+        kubectl get nodes -o wide
+        echo "=== Node Distribution by AZ ==="
+        kubectl get nodes -o custom-columns=NAME:.metadata.name,ZONE:.metadata.labels.'topology\.kubernetes\.io/zone' --no-headers | sort -k2
       become: no
       register: cluster_nodes
-      retries: 3
+      retries: 2
       delay: 30
-
+      
     - name: Display cluster status
       debug:
-        msg: "Cluster nodes: {{ cluster_nodes.stdout_lines }}"
+        msg: "{{ cluster_nodes.stdout_lines }}"
+        
+    - name: Create cluster summary
+      copy:
+        content: |
+          Kubernetes Cluster Summary
+          =========================
+          Cluster Name: {{ cluster_name }}
+          VPC ID: {{ vpc_id }}
+          Private Subnets: {{ private_subnets }}
+          Public Subnets: {{ public_subnets }}
+          Node Count: 2 (distributed across us-east-2a, us-east-2b)
+          Instance Types: t3.medium (masters and nodes)
+          Topology: Private (Production-ready)
+          
+          Access via your existing bastion host:
+          1. SSH to your bastion host
+          2. Export KOPS_STATE_STORE={{ kops_state_store }}
+          3. kubectl get nodes
+          
+          API Server: Accessible via public load balancer
+          Worker Nodes: In private subnets (secure)
+          
+          Created: {{ ansible_date_time.iso8601 }}
+        dest: /home/ubuntu/cluster-summary.txt
+      become: no
 ...

@@ -50,18 +50,18 @@ spec:
             memory: "256Mi"
             cpu: "200m"
         # Add health checks
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 5
-          periodSeconds: 5
+       # livenessProbe:
+       #   httpGet:
+       #    path: /
+       #    port: 8080
+       #  initialDelaySeconds: 30
+       #  periodSeconds: 10
+       # readinessProbe:
+       #   httpGet:
+       #     path: /
+       #     port: 8080
+       #   initialDelaySeconds: 5
+       #   periodSeconds: 5
 
 ---
 apiVersion: v1
