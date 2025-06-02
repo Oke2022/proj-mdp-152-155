@@ -47,7 +47,7 @@ pipeline {
             }
         }
 
-        stage('Run Ansible Playbook to Deploy to Kubernetes')
+        stage('Run Ansible Playbook to Deploy to Kubernetes') {
 	     steps {
                 sshagent(['ansible-ssh-key']) {
             	    sh '''
