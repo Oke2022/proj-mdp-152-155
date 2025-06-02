@@ -118,25 +118,6 @@ module "k8-master" {
   }
 }
 
-module "k8-worker" {
-  source  = "terraform-aws-modules/ec2-instance/aws"
-
-  name = "k8-worker"
-
-  ami                    = "ami-04f167a56786e4b09"
-  instance_type          = "t3.medium"
-  subnet_id              = "subnet-0afa481b339083ed9"
-  key_name               = "my-key1"
-  vpc_security_group_ids = ["sg-08f1b7a07c598f7e9"]
-  private_ip             = "10.0.1.5"
-  monitoring             = true
-
-  tags = {
-    Terraform   = "true"
-    Environment = "prod"
-  }
-}
-
 
 
 # K8 S3 bucket
@@ -147,4 +128,42 @@ resource "aws_s3_bucket" "kops_state" {
     Name        = "k8-bucket"
     Environment = "prod"
   }
+
 }
+
+
+
+
+module "k8-master-calc" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+
+  name = "k8-master-calc"
+
+  ami                    = "ami-04f167a56786e4b09"
+  instance_type          = "t3.medium"
+  subnet_id              = "subnet-0cb3f547d61223235"
+  key_name               = "my-key1"
+  vpc_security_group_ids = ["sg-08f1b7a07c598f7e9"]
+  private_ip             = "10.0.0.25"
+  monitoring             = true
+
+  tags = {
+    Terraform   = "true"
+    Environment = "prod"
+  }
+}
+
+
+
+# K8s production S3 bucket
+resource "aws_s3_bucket" "k8s_state" {
+  bucket = "k8s-cal-state-bucket"
+
+  tags = {
+    Name        = "k8-bucket-calc"
+    Environment = "prod"
+  }
+}
+
+
+
